@@ -1,0 +1,35 @@
+{
+  "name": "zebra-printers-electron",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./app/src/main.js",
+  "scripts": {
+    "dev": "tsc && electron ./app/src/main.js",
+    "dev:rebuild": "electron-builder install-app-deps",
+    "dist:build": "tsc && electron-builder --win --publish never",
+    "dist:publish": "tsc && electron-builder --win --publish always"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/cors": "^2.8.13",
+    "@types/electron-json-storage": "^4.5.0",
+    "@types/express": "^4.17.17",
+    "@types/mithril": "^2.0.12",
+    "electron": "^23.2.0",
+    "electron-builder": "^23.6.0",
+    "electron-rebuild": "^3.2.9",
+    "typescript": "^5.0.2"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "electron-json-storage": "^4.6.0",
+    "electron-log": "^5.0.0-beta.16",
+    "electron-updater": "^5.3.0",
+    "express": "^4.18.2",
+    "mithril": "^2.2.2",
+    "usb": "^2.9.0",
+    "usb-detection": "^4.14.2"
+  }
+}
