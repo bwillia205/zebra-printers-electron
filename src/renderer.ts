@@ -18,7 +18,6 @@ ipcRenderer.on(
     (event: Electron.IpcRendererEvent, data: IData) => {
         devices.data.selected = data.selected;
         devices.data.list = data.list;
-        console.log(data);
         // Trigger mithril's redraw programmatically.
         m.redraw();
     }
@@ -90,11 +89,11 @@ const notification = {
 
 const notifications = {
     list: [
-        {class: '', content: 'empty', duration: 0},
-        {class: 'yellow', content: 'yellow', duration: 2000},
-        {class: 'green', content: 'green', duration: 3000},
-        {class: 'blue', content: 'blue', duration: 4000},
-        {class: 'red', content: 'red', duration: 5000},
+        // {class: '', content: 'empty', duration: 0},
+        // {class: 'yellow', content: 'yellow', duration: 2000},
+        // {class: 'green', content: 'green', duration: 3000},
+        // {class: 'blue', content: 'blue', duration: 4000},
+        // {class: 'red', content: 'red', duration: 5000},
     ] as INotification[],
     remove: (el: INotification) => {
         const index = notifications.list.indexOf(el);

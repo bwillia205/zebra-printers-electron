@@ -90,7 +90,7 @@ export class Server {
                     .then(() => {
                         response
                             .status(200)
-                            .send("Default printer succesfully set.");
+                            .send("Default printer successfully set.");
                     })
                     .catch((error) => {
                         response.status(500).send(`${error}`);

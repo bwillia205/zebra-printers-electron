@@ -15,7 +15,7 @@ const server = new Server(manager);
  * A global value to detect if app.quit() fired via tray.
  */
 let quittingViaTray: boolean = false;
-const showConsole: boolean = false;
+const showConsole: boolean = true;
 
 // Global reference to main window.
 let mainWindow: Electron.BrowserWindow;
@@ -23,7 +23,7 @@ let mainTray: Tray;
 
 function createMainWindow() {
     const window = new BrowserWindow({
-        webPreferences: { nodeIntegration: true },
+        webPreferences: { nodeIntegration: true, contextIsolation: false },
         title: "zebra",
         width: 320,
         height: 480,

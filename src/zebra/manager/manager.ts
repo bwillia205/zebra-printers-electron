@@ -13,6 +13,7 @@ interface IDevice {
 
 const supportedVendors = [
     0xa5f, // Zebra
+    2655,
     // 0xBDA,  // Test: Realtek
     // 0x4F2,  // Test: Standart USB Host Controller
 ];
@@ -59,10 +60,7 @@ export class Manager extends EventEmitter {
                     reject();
                 } else {
                     resolve(
-                        devices.filter(
-                            (device) =>
-                                supportedVendors.indexOf(device.vendorId) !== -1
-                        )
+                        devices.filter((device) => supportedVendors.indexOf(device.vendorId) !== -1)
                     );
                 }
             });
