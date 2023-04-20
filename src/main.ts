@@ -1,3 +1,4 @@
+#!/bin/node
 import { app, BrowserWindow, ipcMain, Menu, Tray } from "electron";
 import * as log from "electron-log";
 import { autoUpdater } from "electron-updater";

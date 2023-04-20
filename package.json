@@ -1,13 +1,20 @@
 {
   "name": "zebra-printers-electron",
   "version": "1.0.0",
-  "description": "",
+  "description": "App to connect to Zebra thermal printers",
   "main": "./app/src/main.js",
   "scripts": {
     "dev": "tsc && electron ./app/src/main.js",
     "dev:rebuild": "electron-builder install-app-deps",
-    "dist:build": "tsc && electron-builder --win --publish never",
-    "dist:publish": "tsc && electron-builder --win --publish always"
+    "dist:build": "tsc && electron-builder --mac --publish never",
+    "dist:publish": "tsc && electron-builder --win --publish always",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "zebra-printers", 
+    "mac": { 
+      "target": "pkg"
+    }
   },
   "keywords": [],
   "author": "",
@@ -28,6 +35,7 @@
     "electron-log": "^5.0.0-beta.16",
     "electron-updater": "^5.3.0",
     "express": "^4.18.2",
+    "local-devices": "^4.0.0",
     "mithril": "^2.2.2",
     "usb": "^2.9.0",
     "usb-detection": "^4.14.2"

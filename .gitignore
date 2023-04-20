@@ -1,4 +1,4 @@
 node_modules
-distribution
+dist/
 app/src
 package-lock.json
