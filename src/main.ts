@@ -44,7 +44,11 @@ function createMainWindow() {
     if (showConsole) {
         window.webContents.openDevTools({ mode: "detach" });
     }
-
+    window.webContents.getPrintersAsync().then((data) => {
+        console.log('test: ', data);
+    }).catch((e) => {
+        console.log(e);
+    })
     window.on("close", (event) => {
         // Prevent the closing app directly, minimize to tray instead.
         if (!quittingViaTray) {

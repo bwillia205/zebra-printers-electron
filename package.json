@@ -11,8 +11,8 @@
     "postinstall": "electron-builder install-app-deps"
   },
   "build": {
-    "appId": "zebra-printers", 
-    "mac": { 
+    "appId": "zebra-printers",
+    "mac": {
       "target": "pkg"
     }
   },
