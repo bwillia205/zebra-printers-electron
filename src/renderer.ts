@@ -1,12 +1,15 @@
 import { ipcRenderer } from "electron";
 import * as m from "mithril";
-import { Device } from "./zebra";
+import { Device, WifiDevice } from "./zebra";
 
 export interface IData {
     selected: number;
     list: Device[];
 }
-
+export interface WifiData {
+    selected: number;
+    list: WifiDevice[];
+}
 // App's root element.
 const root = document.getElementById("app");
 
@@ -18,6 +21,14 @@ ipcRenderer.on(
     (event: Electron.IpcRendererEvent, data: IData) => {
         devices.data.selected = data.selected;
         devices.data.list = data.list;
+        // Trigger mithril's redraw programmatically.
+        m.redraw();
+    }
+);
+ipcRenderer.on(
+    "wifidevices.list",
+    (event: Electron.IpcRendererEvent, data: WifiData) => {
+        wifiDevices.data.list = data.list;
         // Trigger mithril's redraw programmatically.
         m.redraw();
     }
@@ -51,6 +62,33 @@ const devices = {
                         },
                     },
                     device.deviceName
+                );
+            })
+        );
+    },
+};
+const wifiDevices = {
+    data: {
+        selected: null,
+        list: [],
+    } as WifiData,
+    view: () => {
+        return m(
+            "ul.wifidevices",
+            wifiDevices.data.list.map((device, index) => {
+                return m(
+                    "li.device",
+                    {
+                        key: device.ip,
+                        class:
+                            index === devices.data.selected ? "selected" : "",
+                        onclick: () => {
+                            ipcRenderer.send("device.set", index);
+                        },
+                    },
+                    `Name: ${device.name}
+                    IP: ${device.ip}
+                    MAC: ${device.mac}`
                 );
             })
         );
@@ -121,6 +159,15 @@ const body = {
                           "Select a default device to handle requests."
                       ),
                       m(devices),
+                  ]
+                : m("div.empty"),
+            wifiDevices.data.list.length > 0
+                ? [
+                      m(
+                          "div.info",
+                          "Select a default device to handle requests."
+                      ),
+                      m(wifiDevices),
                   ]
                 : m("div.empty"),
         ]);

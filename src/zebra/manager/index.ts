@@ -1,1 +1,1 @@
-export { Manager, Device } from './manager';
+export { Manager, Device, WifiDevice } from './manager';

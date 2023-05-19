@@ -2,6 +2,7 @@ import * as storage from "electron-json-storage";
 import { EventEmitter } from "events";
 import * as usb from "usb";
 import * as usbDetection from "usb-detection";
+const find = require('local-devices');
 
 export type Device = usbDetection.Device;
 type Endpoint = usb.OutEndpoint;
@@ -9,6 +10,11 @@ type Endpoint = usb.OutEndpoint;
 interface IDevice {
     device: Device;
     endpoint: Endpoint;
+}
+export interface WifiDevice {
+    name: string,
+    ip: string,
+    mac: string
 }
 
 const supportedVendors = [
@@ -64,6 +70,17 @@ export class Manager extends EventEmitter {
                     );
                 }
             });
+        });
+    }
+    public get wifiDeviceList(): Promise<WifiDevice[]> {
+        return new Promise((resolve, reject) => {
+            try {
+                find().then((devices: WifiDevice[]) => {
+                    resolve(devices);
+                })
+            } catch (error) {
+                reject(error)
+            }
         });
     }
 

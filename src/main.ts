@@ -3,7 +3,7 @@ import { app, BrowserWindow, ipcMain, Menu, Tray } from "electron";
 import * as log from "electron-log";
 import { autoUpdater } from "electron-updater";
 import * as path from "path";
-import { IData, INotification } from "./renderer";
+import { IData, INotification, WifiData } from "./renderer";
 import { Device, Manager, Server } from "./zebra";
 
 autoUpdater.logger = log;
@@ -16,8 +16,8 @@ const server = new Server(manager);
  * A global value to detect if app.quit() fired via tray.
  */
 let quittingViaTray: boolean = false;
-const showConsole: boolean = true;
-
+const showConsole: boolean = Boolean(process.env.SHOW_CONSOLE);
+console.log(process.env.SHOW_CONSOLE);
 // Global reference to main window.
 let mainWindow: Electron.BrowserWindow;
 let mainTray: Tray;
@@ -44,11 +44,6 @@ function createMainWindow() {
     if (showConsole) {
         window.webContents.openDevTools({ mode: "detach" });
     }
-    window.webContents.getPrintersAsync().then((data) => {
-        console.log('test: ', data);
-    }).catch((e) => {
-        console.log(e);
-    })
     window.on("close", (event) => {
         // Prevent the closing app directly, minimize to tray instead.
         if (!quittingViaTray) {
@@ -136,7 +131,7 @@ ipcMain.on("device.set", (event: Electron.IpcMainEvent, index: number) => {
     manager
         .defaultDevice(index)
         .then(() => {
-            // sendNotification({class: 'green', content: `Default device successfully set.`, duration: 3000});
+            sendNotification({class: 'green', content: `Default device successfully set.`, duration: 3000});
         })
         .catch((err) => {
             sendNotification({
@@ -183,6 +178,12 @@ function updateRenderer() {
             selected: index,
             list: devices,
         } as IData);
+    });
+    manager.wifiDeviceList.then((devices) => {
+        console.log(devices);
+        mainWindow.webContents.send("wifidevices.list", {
+            list: devices,
+        } as WifiData);
     });
 }
 

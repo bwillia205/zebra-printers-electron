@@ -4,7 +4,7 @@
   "description": "App to connect to Zebra thermal printers",
   "main": "./app/src/main.js",
   "scripts": {
-    "dev": "tsc && electron ./app/src/main.js",
+    "dev": "tsc && SHOW_CONSOLE=true electron ./app/src/main.js",
     "dev:rebuild": "electron-builder install-app-deps",
     "dist:build": "tsc && electron-builder --mac --publish never",
     "dist:publish": "tsc && electron-builder --win --publish always",
