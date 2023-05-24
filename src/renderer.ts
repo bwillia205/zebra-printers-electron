@@ -58,7 +58,7 @@ const devices = {
                         class:
                             index === devices.data.selected ? "selected" : "",
                         onclick: () => {
-                            ipcRenderer.send("device.set", index);
+                            ipcRenderer.send("device.set", index, 'usb');
                         },
                     },
                     device.deviceName
@@ -74,7 +74,7 @@ const wifiDevices = {
     } as WifiData,
     view: () => {
         return m(
-            "ul.wifidevices",
+            "ul.wifidevices.devices",
             wifiDevices.data.list.map((device, index) => {
                 return m(
                     "li.device",
@@ -83,7 +83,7 @@ const wifiDevices = {
                         class:
                             index === devices.data.selected ? "selected" : "",
                         onclick: () => {
-                            ipcRenderer.send("device.set", index);
+                            ipcRenderer.send("device.set", index, 'wifi');
                         },
                     },
                     `Name: ${device.name}

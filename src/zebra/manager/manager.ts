@@ -25,7 +25,8 @@ const supportedVendors = [
 ];
 
 export class Manager extends EventEmitter {
-    private _default: IDevice;
+    private _usbDefault: IDevice;
+    private _wifiDefault: WifiDevice;
 
     constructor() {
         super();
@@ -41,18 +42,18 @@ export class Manager extends EventEmitter {
         // On device remove, check if the removed device is default device. If so set it undefined.
         usbDetection.on("remove", (device) => {
             if (
-                this._default &&
-                this._default.device.deviceAddress === device.deviceAddress
+                this._usbDefault &&
+                this._usbDefault.device.deviceAddress === device.deviceAddress
             ) {
-                this._default = undefined;
+                this._usbDefault = undefined;
                 storage.remove("default-printer", (_) => null); // omit the error.
             }
             this.emit("change:remove", device);
         });
 
         // if default-printer exist try to select it.
-        storage.get("default-printer", (_, data: { id: number }) => {
-            this.defaultDevice(data.id).catch(() => null); // omit the error.
+        storage.get("default-printer", (_, data: { id: number, type: 'wifi' }) => {
+            this.defaultDevice(data.id, data.type).catch(() => null); // omit the error.
         });
     }
 
@@ -88,37 +89,58 @@ export class Manager extends EventEmitter {
      * Set the default device.
      * @param index Device index in the attached devices.
      */
-    public defaultDevice(index: number): Promise<any> {
-        return new Promise((resolve, reject) => {
-            this.getDevice(index)
-                .then((device) => (this._default = device)) // Set the default device.
-                .then((device) => this.emit("change:default", device.device)) // Inform the manager about this change.
-                .then(() => {
-                    storage.set("default-printer", { id: index }, (err) => {
-                        if (err !== undefined) {
-                            throw new Error(err);
-                        }
-                    });
-                })
-                .then(resolve) // Then resolve.
-                .catch((reason) =>
-                    reject(`Can't set the default device.\n${reason}`)
-                ); // Cacth any error.
-        });
+    public async defaultDevice(index: number, type?: string): Promise<any> {
+        if(type === undefined){
+            type = 'wifi';
+        }
+        if(type === 'usb'){
+            try {
+                const device = await this.getUSBDevice(index)
+                this._usbDefault = device; // Set the default device.
+                this.emit("change:default", device.device) // Inform the manager about this change.
+                storage.set("default-printer", { id: index }, (err) => {
+                    if (err !== undefined) {
+                        throw new Error(err);
+                    }
+                });
+            } catch (error) {
+                throw new Error(`Can't set the default device.\n${error}`)
+            }
+
+        } else if(type === 'wifi'){
+            try {
+                const device = await this.getWifiDevice(index)
+                this._wifiDefault = device; // Set the default device.
+                this.emit("change:default", device) // Inform the manager about this change.
+                storage.set("default-printer", { id: index }, (err) => {
+                    if (err !== undefined) {
+                        throw new Error(err);
+                    }
+                });
+            } catch (error) {
+                throw new Error(`Can't set the default device.\n${error}`)
+            }
+        }
     }
 
     /**
      * Returns the default device's index in the given device list.
      * @param devices Currently attached device array.
      */
-    public findDefaultDeviceIndex(devices: Device[]): number {
+    public findDefaultUSBDeviceIndex(devices: Device[]): number {
         return devices.findIndex(
             (device) =>
-                this._default &&
-                this._default.device.deviceAddress === device.deviceAddress
+                this._usbDefault &&
+                this._usbDefault.device.deviceAddress === device.deviceAddress
         );
     }
-
+    public findDefaultWifiDeviceIndex(devices: WifiDevice[]): number {
+        return devices.findIndex(
+            (device) =>
+                this._wifiDefault &&
+                this._wifiDefault.ip === device.ip
+        );
+    }
     /**
      * Transfers given data to device.
      *
@@ -126,86 +148,113 @@ export class Manager extends EventEmitter {
      * @param data Data to be transferred into device.
      * @param index Device index in the attached devices.
      */
-    public transfer(data: Buffer, index?: number): Promise<any> {
-        return new Promise((resolve, reject) => {
-            this.getEndpoint(index)
-                .then((endpoint) => {
-                    endpoint.transfer(data, (error) => {
-                        if (error !== undefined) {
-                            throw error;
-                        } else {
-                            resolve(data);
-                        }
-                    });
-                })
-                .catch(reject);
-        });
-    }
+    public async transfer(data: Buffer, index?: number, type?: string): Promise<any> {
+        if(type === undefined){
+            type = 'wifi';
+        }
+        if(type === 'usb'){
+            try {
+                const endpoint = await this.getUSBEndpoint(index)
+                return endpoint.transfer(data, (error) => {
+                    if (error !== undefined) {
+                        throw error;
+                    } else {
+                        return data;
+                    }
+                });
+            } catch (error) {
+                throw new Error(`Failed to transfer, error: ${error}`);
+            }
+        } else if (type === 'wifi'){
+            try {
+                const ip = await this.getWifiEndpoint(index)
+                const url = "http://"+ip+"/pstprnt";
+                const method = "POST";
+                const async = true;
+                const request = new XMLHttpRequest();
+                request.open(method, url, async);
+                request.setRequestHeader("Content-Length", data.length.toString());
+                request.send(data);
+            } catch (error) {
+                throw new Error(`Failed to transfer, error: ${error}`);
+            }
+        }
 
+    }
+    private async getUSBDevice(index: number): Promise<IDevice> {
+        const devices = await this.deviceList;
+
+        try {
+            let device = devices.find((_, idx) => idx === index);       
+            // Access the device via node-usb.
+            const _device = usb.findByIds(
+                device.vendorId,
+                device.productId
+            );
+            if (!_device) {
+                throw new Error("Device not found.");
+            }
+            _device.open();
+
+            const _interface = _device.interface(0);
+
+            if (!_interface) {
+                _device.close();
+                // tslint:disable-next-line: max-line-length
+                throw new Error(
+                    `Can not claim the device's interface. Device might be claimed by another program. Try to close it.`
+                );
+            }
+            _interface.claim();
+
+            const _endpoint = _interface
+                .endpoints[1] as usb.OutEndpoint;
+            return {
+                device,
+                endpoint: _endpoint,
+            };
+        } catch (error) {
+            throw new Error(`Can not get the device.\n${error}`)
+        }
+    }
     /**
      * Get the device.
      * @param index Device index in the attached devices.
      */
-    private getDevice(index: number): Promise<IDevice> {
-        return new Promise((resolve, reject) => {
-            this.deviceList
-                .then((devices) => devices.find((_, idx) => idx === index))
-                .then((device) => {
-                    // Access the device via node-usb.
-                    const _device = usb.findByIds(
-                        device.vendorId,
-                        device.productId
-                    );
-                    if (!_device) {
-                        throw new Error("Device not found.");
-                    }
-                    _device.open();
-
-                    const _interface = _device.interface(0);
-
-                    if (!_interface) {
-                        _device.close();
-                        // tslint:disable-next-line: max-line-length
-                        throw new Error(
-                            `Can not claim the device's interface. Device might be claimed by another program. Try to close it.`
-                        );
-                    }
-                    _interface.claim();
-
-                    const _endpoint = _interface
-                        .endpoints[1] as usb.OutEndpoint;
-
-                    resolve({
-                        device,
-                        endpoint: _endpoint,
-                    });
-                })
-                .catch((reason) =>
-                    reject(`Can not get the device.\n${reason}`)
-                );
-        });
+     private async getWifiDevice(index: number): Promise<WifiDevice> {
+            const wifiDevices = await this.wifiDeviceList;
+            return wifiDevices[index];
     }
-
+    private async getWifiEndpoint(index?: number): Promise<string> {
+        if (index !== undefined) {
+            return await this.getWifiDevice(index).then((device) => device.ip)
+        } else {
+            if (this._wifiDefault !== undefined) {
+                return this._wifiDefault.ip;
+            } else {
+                // tslint:disable-next-line: max-line-length
+                throw new Error(
+                    `There isn't a device index given nor a default device set before to handle the request.\nPlease select a default device to handle upcoming requests or send a device index with the request.`
+                );
+            }
+        }
+    }
     /**
      * Get the endpoint.
      * @param index Device index in the attached devices.
      */
-    private getEndpoint(index?: number): Promise<Endpoint> {
-        return new Promise((resolve, reject) => {
-            if (index !== undefined) {
-                resolve(
-                    this.getDevice(index).then((device) => device.endpoint)
-                );
+    private async getUSBEndpoint(index?: number): Promise<Endpoint> {
+        if (index !== undefined) {
+            return await this.getUSBDevice(index).then((device) => device.endpoint)
+        } else {
+            if (this._usbDefault !== undefined) {
+                return this._usbDefault.endpoint;
             } else {
-                if (this._default !== undefined) {
-                    resolve(this._default.endpoint);
-                } else {
-                    // tslint:disable-next-line: max-line-length
-                    reject(
-                        `There isn't a device index given nor a default device set before to handle the request.\nPlease select a default device to handle upcoming requests or send a device index with the request.`
-                    );
-                }
+                // tslint:disable-next-line: max-line-length
+                throw new Error(
+                    `There isn't a device index given nor a default device set before to handle the request.\nPlease select a default device to handle upcoming requests or send a device index with the request.`
+                );
             }
-        });
+        }
     }
 }

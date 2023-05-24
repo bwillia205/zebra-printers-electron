@@ -7,6 +7,7 @@ enum Header {
     ContentType = "x-application/zpl",
     DefaultPrinter = "x-default-printer",
     Printer = "x-printer",
+    DefaultPrinterType = "x-printer-type"
 }
 
 export class Server {
@@ -63,7 +64,7 @@ export class Server {
         this.express.get("/", (_, response) => {
             this.manager.deviceList
                 .then((devices) => {
-                    const index = this.manager.findDefaultDeviceIndex(devices);
+                    const index = this.manager.findDefaultUSBDeviceIndex(devices);
                     response.json({
                         selected: index,
                         devices,
@@ -77,7 +78,7 @@ export class Server {
             const defaultPrinter = this.parseNumber(
                 request.headers[Header.DefaultPrinter]
             );
-
+            const printerType: string = String(request.headers[Header.DefaultPrinterType]);
             const contentType = request.headers["content-type"];
             if (contentType !== Header.ContentType) {
                 return response.status(400).send("Bad request");
@@ -86,7 +87,7 @@ export class Server {
             // if defaultPrinter is defined set the defualt printer.
             if (defaultPrinter !== undefined) {
                 this.manager
-                    .defaultDevice(defaultPrinter)
+                    .defaultDevice(defaultPrinter, printerType)
                     .then(() => {
                         response
                             .status(200)
@@ -105,7 +106,7 @@ export class Server {
                 );
 
                 this.manager
-                    .transfer(request.body, requestPrinter)
+                    .transfer(request.body, requestPrinter, printerType)
                     .then(() => {
                         response.end();
                     })

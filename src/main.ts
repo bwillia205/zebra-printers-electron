@@ -17,7 +17,6 @@ const server = new Server(manager);
  */
 let quittingViaTray: boolean = false;
 const showConsole: boolean = Boolean(process.env.SHOW_CONSOLE);
-console.log(process.env.SHOW_CONSOLE);
 // Global reference to main window.
 let mainWindow: Electron.BrowserWindow;
 let mainTray: Tray;
@@ -127,23 +126,20 @@ app.on("ready", () => {
 // When the renderer is ready execute the updateRenderer.
 ipcMain.on("renderer.ready", () => updateRenderer());
 
-ipcMain.on("device.set", (event: Electron.IpcMainEvent, index: number) => {
-    manager
-        .defaultDevice(index)
-        .then(() => {
-            sendNotification({class: 'green', content: `Default device successfully set.`, duration: 3000});
-        })
-        .catch((err) => {
-            sendNotification({
-                class: "red",
-                content: `${err}`,
-                duration: 5000,
-            });
-        });
+ipcMain.on("device.set", async (event: Electron.IpcMainEvent, index: number, type: string) => {
+    try {
+        await manager.defaultDevice(index, type);
+    } catch (error) {
+        console.log(error)
+    }
+
+
 });
 
 // Inform the renderer on any change on the manager.
-manager.on("change", () => updateRenderer());
+manager.on("change", () => {
+    updateRenderer()
+});
 
 manager.on("change:remove", (device: Device) => {
     sendNotification({
@@ -161,9 +157,8 @@ manager.on("change:add", (device: Device) => {
     });
 });
 
-manager.on("change:default", (device: Device) => {
+manager.on("change:default", (device: any) => {
     updateRenderer();
-    // tslint:disable-next-line: max-line-length
     sendNotification({
         class: "green",
         content: `${device.deviceName} selected as default request handler.`,
@@ -173,15 +168,16 @@ manager.on("change:default", (device: Device) => {
 
 function updateRenderer() {
     manager.deviceList.then((devices) => {
-        const index = manager.findDefaultDeviceIndex(devices);
+        const index = manager.findDefaultUSBDeviceIndex(devices);
         mainWindow.webContents.send("device.list", {
             selected: index,
             list: devices,
         } as IData);
     });
     manager.wifiDeviceList.then((devices) => {
-        console.log(devices);
+        const index = manager.findDefaultWifiDeviceIndex(devices);
         mainWindow.webContents.send("wifidevices.list", {
+            selected: index,
             list: devices,
         } as WifiData);
     });
