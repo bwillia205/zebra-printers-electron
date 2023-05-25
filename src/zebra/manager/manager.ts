@@ -53,7 +53,9 @@ export class Manager extends EventEmitter {
 
         // if default-printer exist try to select it.
         storage.get("default-printer", (_, data: { id: number, type: 'wifi' }) => {
-            this.defaultDevice(data.id, data.type).catch(() => null); // omit the error.
+            this.defaultDevice(data.id, data.type).catch((error) => {
+                console.log(error);
+            }); // omit the error.
         });
     }
 

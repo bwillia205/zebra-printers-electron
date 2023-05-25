@@ -28,6 +28,7 @@ ipcRenderer.on(
 ipcRenderer.on(
     "wifidevices.list",
     (event: Electron.IpcRendererEvent, data: WifiData) => {
+        wifiDevices.data.selected = data.selected;
         wifiDevices.data.list = data.list;
         // Trigger mithril's redraw programmatically.
         m.redraw();
@@ -77,7 +78,7 @@ const wifiDevices = {
             "ul.wifidevices.devices",
             wifiDevices.data.list.map((device, index) => {
                 return m(
-                    "li.device",
+                    "li.wifidevice",
                     {
                         key: device.ip,
                         class:
@@ -152,24 +153,20 @@ const body = {
     view: () => {
         return m("div.body", [
             m(notifications),
-            devices.data.list.length > 0
-                ? [
-                      m(
-                          "div.info",
-                          "Select a default device to handle requests."
-                      ),
-                      m(devices),
-                  ]
-                : m("div.empty"),
-            wifiDevices.data.list.length > 0
-                ? [
-                      m(
-                          "div.info",
-                          "Select a default device to handle requests."
-                      ),
-                      m(wifiDevices),
-                  ]
-                : m("div.empty"),
+            [
+                m(
+                    "div.info",
+                    "Select a default USB device to handle requests."
+                ),
+                m(devices),
+            ],
+            [
+                m(
+                    "div.info",
+                    "Select a default WiFi device to handle requests."
+                ),
+                m(wifiDevices),
+            ],
         ]);
     },
 };

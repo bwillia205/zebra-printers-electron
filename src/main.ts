@@ -130,7 +130,7 @@ ipcMain.on("device.set", async (event: Electron.IpcMainEvent, index: number, typ
     try {
         await manager.defaultDevice(index, type);
     } catch (error) {
-        console.log(error)
+        console.error(error)
     }
 
 
@@ -142,28 +142,29 @@ manager.on("change", () => {
 });
 
 manager.on("change:remove", (device: Device) => {
-    sendNotification({
-        class: "yellow",
-        content: `${device.deviceName} removed from the system.`,
-        duration: 1500,
-    });
+    // sendNotification({
+    //     class: "yellow",
+    //     content: `${device.deviceName} removed from the system.`,
+    //     duration: 1500,
+    // });
 });
 
 manager.on("change:add", (device: Device) => {
-    sendNotification({
-        class: "blue",
-        content: `${device.deviceName} attached to the system.`,
-        duration: 1500,
-    });
+    updateRenderer();
+    // sendNotification({
+    //     class: "blue",
+    //     content: `${device.deviceName} attached to the system.`,
+    //     duration: 1500,
+    // });
 });
 
 manager.on("change:default", (device: any) => {
     updateRenderer();
-    sendNotification({
-        class: "green",
-        content: `${device.deviceName} selected as default request handler.`,
-        duration: 1500,
-    });
+    // sendNotification({
+    //     class: "green",
+    //     content: `${device.deviceName} selected as default request handler.`,
+    //     duration: 1500,
+    // });
 });
 
 function updateRenderer() {
