@@ -101,12 +101,14 @@ export class Server {
 
             // if request body's length is greater than zero, try to print.
             if (request.body.length > 0) {
+                const parsedBody = JSON.parse(request.body.toString());
+                const labelString = parsedBody.zpl_data ? Buffer.from(parsedBody.zpl_data): request.body;
                 const requestPrinter = this.parseNumber(
                     request.headers[Header.Printer]
                 );
 
                 this.manager
-                    .transfer(request.body, requestPrinter, printerType)
+                    .transfer(labelString, requestPrinter, printerType)
                     .then(() => {
                         response.end();
                     })
