@@ -75,14 +75,14 @@ const wifiDevices = {
     } as WifiData,
     view: () => {
         return m(
-            "ul.wifidevices.devices",
+            "ul.wifidevices",
             wifiDevices.data.list.map((device, index) => {
                 return m(
                     "li.wifidevice",
                     {
                         key: device.ip,
                         class:
-                            index === devices.data.selected ? "selected" : "",
+                            index === wifiDevices.data.selected ? "selected" : "",
                         onclick: () => {
                             ipcRenderer.send("device.set", index, 'wifi');
                         },
