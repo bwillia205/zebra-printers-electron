@@ -2,3 +2,4 @@ node_modules
 dist/
 app/src
 package-lock.json
+.idea

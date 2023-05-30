@@ -3,6 +3,7 @@ import { EventEmitter } from "events";
 import * as usb from "usb";
 import * as usbDetection from "usb-detection";
 const find = require('local-devices');
+const XMLHttpRequest = require('xhr2');
 
 export type Device = usbDetection.Device;
 type Endpoint = usb.OutEndpoint;
@@ -170,7 +171,7 @@ export class Manager extends EventEmitter {
         } else if (type === 'wifi'){
             try {
                 const ip = await this.getWifiEndpoint(index)
-                const url = "http://"+ip+"/pstprnt";
+                const url = `http://{ip}:9100/`
                 const method = "POST";
                 const async = true;
                 const request = new XMLHttpRequest();
