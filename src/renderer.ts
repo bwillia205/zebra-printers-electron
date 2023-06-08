@@ -1,6 +1,6 @@
-import { ipcRenderer } from "electron";
-import * as m from "mithril";
-import { Device, WifiDevice } from "./zebra";
+import { ipcRenderer } from 'electron';
+import * as m from 'mithril';
+import { Device, WifiDevice } from './zebra';
 
 export interface IData {
     selected: number;
@@ -11,13 +11,13 @@ export interface WifiData {
     list: WifiDevice[];
 }
 // App's root element.
-const root = document.getElementById("app");
+const root = document.getElementById('app');
 
 // Inform the main process.
-ipcRenderer.send("renderer.ready");
+ipcRenderer.send('renderer.ready');
 
 ipcRenderer.on(
-    "device.list",
+    'device.list',
     (event: Electron.IpcRendererEvent, data: IData) => {
         devices.data.selected = data.selected;
         devices.data.list = data.list;
@@ -26,7 +26,7 @@ ipcRenderer.on(
     }
 );
 ipcRenderer.on(
-    "wifidevices.list",
+    'wifidevices.list',
     (event: Electron.IpcRendererEvent, data: WifiData) => {
         wifiDevices.data.selected = data.selected;
         wifiDevices.data.list = data.list;
@@ -36,7 +36,7 @@ ipcRenderer.on(
 );
 
 ipcRenderer.on(
-    "notification",
+    'notification',
     (even: Electron.IpcRendererEvent, data: INotification) => {
         notifications.list.push(data);
         m.redraw();
@@ -50,16 +50,16 @@ const devices = {
     } as IData,
     view: () => {
         return m(
-            "ul.devices",
+            'ul.devices',
             devices.data.list.map((device, index) => {
                 return m(
-                    "li.device",
+                    'li.device',
                     {
                         key: device.deviceAddress,
                         class:
-                            index === devices.data.selected ? "selected" : "",
+                            index === devices.data.selected ? 'selected' : '',
                         onclick: () => {
-                            ipcRenderer.send("device.set", index, 'usb');
+                            ipcRenderer.send('device.set', index, 'usb');
                         },
                     },
                     device.deviceName
@@ -75,16 +75,16 @@ const wifiDevices = {
     } as WifiData,
     view: () => {
         return m(
-            "ul.wifidevices",
+            'ul.wifidevices',
             wifiDevices.data.list.map((device, index) => {
                 return m(
-                    "li.wifidevice",
+                    'li.wifidevice',
                     {
                         key: device.ip,
                         class:
-                            index === wifiDevices.data.selected ? "selected" : "",
+                            index === wifiDevices.data.selected ? 'selected' : '',
                         onclick: () => {
-                            ipcRenderer.send("device.set", index, 'wifi');
+                            ipcRenderer.send('device.set', index, 'wifi');
                         },
                     },
                     `Name: ${device.name}
@@ -114,7 +114,7 @@ const notification = {
     view: (vn: m.Vnode) => {
         const mvn = vn.attrs as INotification;
         return m(
-            "div.notification",
+            'div.notification',
             {
                 class: mvn.class,
                 onclick: () => {
@@ -141,7 +141,7 @@ const notifications = {
     },
     view: (): m.Vnode<any, any> => {
         return m(
-            "div.notifications",
+            'div.notifications',
             notifications.list.map((e: INotification) => {
                 return m(notifications, e);
             })
@@ -151,20 +151,22 @@ const notifications = {
 
 const body = {
     view: () => {
-        return m("div.body", [
+        return m('div.body', [
             m(notifications),
             [
                 m(
-                    "div.info",
-                    "Select a default USB device to handle requests."
+                    'div.info',
+                    'Select a default USB device to handle requests.'
                 ),
+                m('div.lds-ring', [m('div')]),
                 m(devices),
             ],
             [
                 m(
-                    "div.info",
-                    "Select a default WiFi device to handle requests."
+                    'div.info',
+                    'Select a default WiFi device to handle requests.'
                 ),
+                m('div.lds-ring', [m('div')]),
                 m(wifiDevices),
             ],
         ]);

@@ -28,7 +28,7 @@ const supportedVendors = [
 export class Manager extends EventEmitter {
     private _usbDefault: IDevice;
     private _wifiDefault: WifiDevice;
-
+    private _wifiDevices: WifiDevice[] = [];
     constructor() {
         super();
 
@@ -47,13 +47,17 @@ export class Manager extends EventEmitter {
                 this._usbDefault.device.deviceAddress === device.deviceAddress
             ) {
                 this._usbDefault = undefined;
-                storage.remove("default-printer", (_) => null); // omit the error.
+                storage.remove("default-usb-printer", (_) => null); // omit the error.
             }
             this.emit("change:remove", device);
         });
 
-        // if default-printer exist try to select it.
-        storage.get("default-printer", (_, data: { id: number, type: 'wifi' }) => {
+        storage.get("default-wifi-printer", (_, data: { id: number, type: 'wifi' }) => {
+            this.defaultDevice(data.id, data.type).catch((error) => {
+                console.log(error);
+            }); // omit the error.
+        });
+        storage.get("default-usb-printer", (_, data: { id: number, type: 'usb' }) => {
             this.defaultDevice(data.id, data.type).catch((error) => {
                 console.log(error);
             }); // omit the error.
@@ -78,13 +82,18 @@ export class Manager extends EventEmitter {
     }
     public get wifiDeviceList(): Promise<WifiDevice[]> {
         return new Promise((resolve, reject) => {
-            try {
-                find().then((devices: WifiDevice[]) => {
-                    resolve(devices);
-                })
-            } catch (error) {
-                reject(error)
+            if(this._wifiDevices.length === 0){
+                try {
+                    find().then((devices: WifiDevice[]) => {
+                        resolve(devices);
+                    })
+                } catch (error) {
+                    reject(error)
+                }
+            } else {
+                resolve(this._wifiDevices);
             }
+
         });
     }
 
@@ -101,7 +110,7 @@ export class Manager extends EventEmitter {
                 const device = await this.getUSBDevice(index)
                 this._usbDefault = device; // Set the default device.
                 this.emit("change:default", device.device) // Inform the manager about this change.
-                storage.set("default-printer", { id: index }, (err) => {
+                storage.set("default-usb-printer", { id: index }, (err) => {
                     if (err !== undefined) {
                         throw new Error(err);
                     }
@@ -115,7 +124,7 @@ export class Manager extends EventEmitter {
                 const device = await this.getWifiDevice(index)
                 this._wifiDefault = device; // Set the default device.
                 this.emit("change:default", device) // Inform the manager about this change.
-                storage.set("default-printer", { id: index }, (err) => {
+                storage.set("default-wifi-printer", { id: index }, (err) => {
                     if (err !== undefined) {
                         throw new Error(err);
                     }

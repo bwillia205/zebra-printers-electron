@@ -141,47 +141,27 @@ manager.on("change", () => {
     updateRenderer()
 });
 
-manager.on("change:remove", (device: Device) => {
-    // sendNotification({
-    //     class: "yellow",
-    //     content: `${device.deviceName} removed from the system.`,
-    //     duration: 1500,
-    // });
-});
-
 manager.on("change:add", (device: Device) => {
     updateRenderer();
-    // sendNotification({
-    //     class: "blue",
-    //     content: `${device.deviceName} attached to the system.`,
-    //     duration: 1500,
-    // });
 });
 
 manager.on("change:default", (device: any) => {
     updateRenderer();
-    // sendNotification({
-    //     class: "green",
-    //     content: `${device.deviceName} selected as default request handler.`,
-    //     duration: 1500,
-    // });
 });
 
-function updateRenderer() {
-    manager.deviceList.then((devices) => {
-        const index = manager.findDefaultUSBDeviceIndex(devices);
-        mainWindow.webContents.send("device.list", {
-            selected: index,
-            list: devices,
-        } as IData);
-    });
-    manager.wifiDeviceList.then((devices) => {
-        const index = manager.findDefaultWifiDeviceIndex(devices);
-        mainWindow.webContents.send("wifidevices.list", {
-            selected: index,
-            list: devices,
-        } as WifiData);
-    });
+async function updateRenderer() {
+    const usbDevices = await manager.deviceList;
+    const index = manager.findDefaultUSBDeviceIndex(usbDevices);
+    mainWindow.webContents.send("device.list", {
+        selected: index,
+        list: usbDevices,
+    } as IData);
+    const wifiDevices = await manager.wifiDeviceList;
+    const wifiIndex = manager.findDefaultWifiDeviceIndex(wifiDevices);
+    mainWindow.webContents.send("wifidevices.list", {
+        selected: wifiIndex,
+        list: wifiDevices,
+    } as WifiData);
 }
 
 autoUpdater.on("checking-for-update", () => {
