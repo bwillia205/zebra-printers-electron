@@ -21,6 +21,7 @@ ipcRenderer.on(
     (event: Electron.IpcRendererEvent, data: IData) => {
         devices.data.selected = data.selected;
         devices.data.list = data.list;
+        spinner.show = false;
         // Trigger mithril's redraw programmatically.
         m.redraw();
     }
@@ -30,6 +31,7 @@ ipcRenderer.on(
     (event: Electron.IpcRendererEvent, data: WifiData) => {
         wifiDevices.data.selected = data.selected;
         wifiDevices.data.list = data.list;
+        spinner.show = false;
         // Trigger mithril's redraw programmatically.
         m.redraw();
     }
@@ -69,14 +71,20 @@ const devices = {
     },
 };
 const wifiDevices = {
+    showAll: false,
     data: {
         selected: null,
         list: [],
     } as WifiData,
     view: () => {
+        let filteredData = wifiDevices.data.list;
+        if(!wifiDevices.showAll){
+            const filters = new Set(['zebra', 'printer']);
+            filteredData = wifiDevices.data.list.filter(({ name }) => filters.has(name));
+        }
         return m(
             'ul.wifidevices',
-            wifiDevices.data.list.map((device, index) => {
+            filteredData.map((device, index) => {
                 return m(
                     'li.wifidevice',
                     {
@@ -148,17 +156,39 @@ const notifications = {
         );
     },
 };
-
+const spinner = {
+    show: true,
+    view: (): m.Vnode<any, any> => {
+        if(spinner.show){
+            return m('div.spinner', [m('div')])
+        }
+        return m('none');
+    },
+}
+const showAllButton = {
+    view: (vn: m.Vnode) => {
+        return m(
+            'button#showAll',
+            {
+                onclick: () => {
+                    wifiDevices.showAll = true;
+                    m.redraw();
+                },
+            },
+            'Show All'
+        );
+    },
+}
 const body = {
     view: () => {
         return m('div.body', [
+            m(spinner),
             m(notifications),
             [
                 m(
                     'div.info',
                     'Select a default USB device to handle requests.'
                 ),
-                m('div.lds-ring', [m('div')]),
                 m(devices),
             ],
             [
@@ -166,7 +196,7 @@ const body = {
                     'div.info',
                     'Select a default WiFi device to handle requests.'
                 ),
-                m('div.lds-ring', [m('div')]),
+                m(showAllButton),
                 m(wifiDevices),
             ],
         ]);

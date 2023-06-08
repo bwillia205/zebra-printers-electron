@@ -180,7 +180,7 @@ export class Manager extends EventEmitter {
         } else if (type === 'wifi'){
             try {
                 const ip = await this.getWifiEndpoint(index)
-                const url = `http://{ip}:9100/`
+                const url = `http://${ip}:9100/`
                 const method = "POST";
                 const async = true;
                 const request = new XMLHttpRequest();
@@ -233,7 +233,7 @@ export class Manager extends EventEmitter {
      * Get the device.
      * @param index Device index in the attached devices.
      */
-     private async getWifiDevice(index: number): Promise<WifiDevice> {
+    private async getWifiDevice(index: number): Promise<WifiDevice> {
             const wifiDevices = await this.wifiDeviceList;
             return wifiDevices[index];
     }
