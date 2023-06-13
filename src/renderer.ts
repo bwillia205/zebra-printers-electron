@@ -21,8 +21,6 @@ ipcRenderer.on(
     (event: Electron.IpcRendererEvent, data: IData) => {
         devices.data.selected = data.selected;
         devices.data.list = data.list;
-        spinner.show = false;
-        // Trigger mithril's redraw programmatically.
         m.redraw();
     }
 );
@@ -32,14 +30,13 @@ ipcRenderer.on(
         wifiDevices.data.selected = data.selected;
         wifiDevices.data.list = data.list;
         spinner.show = false;
-        // Trigger mithril's redraw programmatically.
         m.redraw();
     }
 );
 
 ipcRenderer.on(
     'notification',
-    (even: Electron.IpcRendererEvent, data: INotification) => {
+    (event: Electron.IpcRendererEvent, data: INotification) => {
         notifications.list.push(data);
         m.redraw();
     }
@@ -162,7 +159,7 @@ const spinner = {
         if(spinner.show){
             return m('div.spinner', [m('div')])
         }
-        return m('none');
+        return m('div');
     },
 }
 const showAllButton = {
@@ -179,25 +176,42 @@ const showAllButton = {
         );
     },
 }
+const filterButton = {
+    view: (vn: m.Vnode) => {
+        return m(
+            'button#filter',
+            {
+                onclick: () => {
+                    wifiDevices.showAll = false;
+                    m.redraw();
+                },
+            },
+            'Show Zebra Printers'
+        );
+    },
+}
 const body = {
     view: () => {
         return m('div.body', [
-            m(spinner),
             m(notifications),
-            [
-                m(
-                    'div.info',
-                    'Select a default USB device to handle requests.'
-                ),
-                m(devices),
-            ],
             [
                 m(
                     'div.info',
                     'Select a default WiFi device to handle requests.'
                 ),
+                m(spinner),
                 m(showAllButton),
+                m(filterButton),
                 m(wifiDevices),
+
+            ],
+            [
+
+                m(
+                    'div.info',
+                    'Select a default USB device to handle requests.'
+                ),
+                m(devices),
             ],
         ]);
     },
