@@ -84,20 +84,20 @@ export class Server {
                 return response.status(400).send("Bad request");
             }
 
-            // if defaultPrinter is defined set the defualt printer.
-            if (defaultPrinter !== undefined) {
-                this.manager
-                    .defaultDevice(defaultPrinter, printerType)
-                    .then(() => {
-                        response
-                            .status(200)
-                            .send("Default printer successfully set.");
-                    })
-                    .catch((error) => {
-                        response.status(500).send(`${error}`);
-                    });
-                return;
-            }
+            // // if defaultPrinter is defined set the defualt printer.
+            // if (defaultPrinter !== undefined) {
+            //     this.manager
+            //         .defaultDevice(defaultPrinter, printerType)
+            //         .then(() => {
+            //             response
+            //                 .status(200)
+            //                 .send("Default printer successfully set.");
+            //         })
+            //         .catch((error) => {
+            //             response.status(500).send(`${error}`);
+            //         });
+            //     return;
+            // }
 
             // if request body's length is greater than zero, try to print.
             if (request.body.length > 0) {

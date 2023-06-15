@@ -59,6 +59,15 @@ ul.wifidevices {
     overflow: hidden;
 }
 
+ul.wifidevices.readonly {
+    background-color: #f0f4c3;
+    color: #33691e;
+    border: 1px solid #dcdcdc;
+    border-radius: 4px;
+    overflow: hidden;
+    pointer-events: none;
+}
+
 ul.wifidevices > li.wifidevice {
     font-size: 14px;
     cursor: pointer;
@@ -79,6 +88,19 @@ ul.wifidevices > li.wifidevice.selected::before {
     content: "✔️";
     line-height: 0;
     margin-right: 8px;
+}
+
+small.note {
+    font-size: 12px;
+    color: #666;
+    padding: 0.25em 0.5em;
+    margin: 0.25em 0;
+}
+
+p.message {
+    margin: 1em auto;
+    padding: 0.5em;
+    font-size: 14px;
 }
 
 div.info {
@@ -156,17 +178,17 @@ div.notification.red::before {
 }
 
 .spinner {
-    display: inline-block;
+    display: block;
     position: relative;
-    width: 80px;
-    height: 80px;
+    width: 48px;
+    height: 48px;
 }
 .spinner div {
     box-sizing: border-box;
     display: block;
     position: absolute;
-    width: 64px;
-    height: 64px;
+    width: 32px;
+    height: 32px;
     margin: 8px;
     border: 8px solid #666;
     border-radius: 50%;
@@ -189,4 +211,15 @@ div.notification.red::before {
     100% {
         transform: rotate(360deg);
     }
+}
+
+button {
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    background-color: #007bff;
+    color: #fff;
+    margin: 4px 8px;
 }

@@ -52,13 +52,13 @@ export class Manager extends EventEmitter {
             this.emit("change:remove", device);
         });
 
-        storage.get("default-wifi-printer", (_, data: { id: number, type: 'wifi' }) => {
-            this.defaultDevice(data.id, data.type).catch((error) => {
+        storage.get("default-wifi-printer", (_, data: { id: number, type: 'wifi', uniqueIdentifier: string }) => {
+            this.defaultDevice(data.id, data.uniqueIdentifier, data.type).catch((error) => {
                 console.log(error);
             }); // omit the error.
         });
-        storage.get("default-usb-printer", (_, data: { id: number, type: 'usb' }) => {
-            this.defaultDevice(data.id, data.type).catch((error) => {
+        storage.get("default-usb-printer", (_, data: { id: number, type: 'usb', uniqueIdentifier: string }) => {
+            this.defaultDevice(data.id, data.uniqueIdentifier, data.type).catch((error) => {
                 console.log(error);
             }); // omit the error.
         });
@@ -101,7 +101,7 @@ export class Manager extends EventEmitter {
      * Set the default device.
      * @param index Device index in the attached devices.
      */
-    public async defaultDevice(index: number, type?: string): Promise<any> {
+    public async defaultDevice(index: number, uniqueIdentifier: string, type?: string): Promise<any> {
         if(type === undefined){
             type = 'wifi';
         }
@@ -121,10 +121,10 @@ export class Manager extends EventEmitter {
 
         } else if(type === 'wifi'){
             try {
-                const device = await this.getWifiDevice(index)
+                const device = await this.getWifiDevice(uniqueIdentifier)
                 this._wifiDefault = device; // Set the default device.
                 this.emit("change:default", device) // Inform the manager about this change.
-                storage.set("default-wifi-printer", { id: index }, (err) => {
+                storage.set("default-wifi-printer", { id: index, uniqueIdentifier: uniqueIdentifier }, (err) => {
                     if (err !== undefined) {
                         throw new Error(err);
                     }
@@ -153,6 +153,13 @@ export class Manager extends EventEmitter {
                 this._wifiDefault.ip === device.ip
         );
     }
+    public findDefaultWifiDevice(devices: WifiDevice[]): WifiDevice {
+        return devices.find(
+            (device) =>
+                this._wifiDefault &&
+                this._wifiDefault.mac === device.mac
+        );
+    }
     /**
      * Transfers given data to device.
      *
@@ -179,7 +186,7 @@ export class Manager extends EventEmitter {
             }
         } else if (type === 'wifi'){
             try {
-                const ip = await this.getWifiEndpoint(index)
+                const ip = await this.getWifiEndpoint()
                 const url = `http://${ip}:9100/`
                 const method = "POST";
                 const async = true;
@@ -233,9 +240,9 @@ export class Manager extends EventEmitter {
      * Get the device.
      * @param index Device index in the attached devices.
      */
-    private async getWifiDevice(index: number): Promise<WifiDevice> {
+    private async getWifiDevice(uniqueIdentifier: string): Promise<WifiDevice> {
             const wifiDevices = await this.wifiDeviceList;
-            return wifiDevices[index];
+            return wifiDevices.filter((device) => device.mac === uniqueIdentifier)[0];
     }
         /**
      * Get the device.
@@ -246,9 +253,9 @@ export class Manager extends EventEmitter {
             return wifiDevices.find((device) => device.mac === mac);
     }
     private async getWifiEndpoint(index?: number): Promise<string> {
-        if (index !== undefined) {
-            return await this.getWifiDevice(index).then((device) => device.ip)
-        } else {
+        // if (index !== undefined) {
+        //     return await this.getWifiDevice(index).then((device) => device.ip)
+        // } else {
             if (this._wifiDefault !== undefined) {
                 return this._wifiDefault.ip;
             } else {
@@ -257,7 +264,7 @@ export class Manager extends EventEmitter {
                     `There isn't a device index given nor a default device set before to handle the request.\nPlease select a default device to handle upcoming requests or send a device index with the request.`
                 );
             }
-        }
+        // }
     }
     /**
      * Get the endpoint.

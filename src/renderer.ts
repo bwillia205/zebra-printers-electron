@@ -7,7 +7,7 @@ export interface IData {
     list: Device[];
 }
 export interface WifiData {
-    selected: number;
+    selected: string;
     list: WifiDevice[];
 }
 // App's root element.
@@ -30,6 +30,7 @@ ipcRenderer.on(
         wifiDevices.data.selected = data.selected;
         wifiDevices.data.list = data.list;
         spinner.show = false;
+        messageParagraph.text = " ";
         m.redraw();
     }
 );
@@ -58,7 +59,7 @@ const devices = {
                         class:
                             index === devices.data.selected ? 'selected' : '',
                         onclick: () => {
-                            ipcRenderer.send('device.set', index, 'usb');
+                            ipcRenderer.send('device.set', index, 'usb', device.serialNumber);
                         },
                     },
                     device.deviceName
@@ -76,8 +77,11 @@ const wifiDevices = {
     view: () => {
         let filteredData = wifiDevices.data.list;
         if(!wifiDevices.showAll){
-            const filters = new Set(['zebra', 'printer']);
-            filteredData = wifiDevices.data.list.filter(({ name }) => filters.has(name));
+            const filters = Array.from(new Set(['zebra', 'printer']));
+
+            // Check if the elements in filters are substring of the name
+            filteredData = wifiDevices.data.list.filter(({ name }) => filters.some((filter) => name.includes(filter)));
+
         }
         return m(
             'ul.wifidevices',
@@ -87,9 +91,10 @@ const wifiDevices = {
                     {
                         key: device.ip,
                         class:
-                            index === wifiDevices.data.selected ? 'selected' : '',
+                            device.mac === wifiDevices.data.selected ? 'selected' : '',
                         onclick: () => {
-                            ipcRenderer.send('device.set', index, 'wifi');
+                            messageParagraph.text = `Setting ${device.name} as default printer`;
+                            ipcRenderer.send('device.set', index, 'wifi', device.mac);
                         },
                     },
                     `Name: ${device.name}
@@ -190,11 +195,42 @@ const filterButton = {
         );
     },
 }
+const refreshButton = {
+    view: (vn: m.Vnode) => {
+        return m(
+            'button#refresh',
+            {
+                onclick: () => {
+                    wifiDevices.data.selected = null;
+                    wifiDevices.data.list = [];
+                    spinner.show = true;
+                    ipcRenderer.send('wifidevices.list');
+                },
+            },
+            'Refresh'
+        );
+    }
+}
+
+// Add a paragraph view element to display dynamic text
+const messageParagraph = {
+    text: '',
+    view: (vn: m.Vnode) => {
+        return m('p.message', messageParagraph.text);
+    }
+}
+
 const body = {
     view: () => {
         return m('div.body', [
             m(notifications),
             [
+
+                m(
+                    'small.note',
+                    'Note: If you are using a Zebra printer, you will need to connect to the VPN before it will appear in the list.'
+                ),
+                m(messageParagraph),
                 m(
                     'div.info',
                     'Select a default WiFi device to handle requests.'
@@ -202,6 +238,7 @@ const body = {
                 m(spinner),
                 m(showAllButton),
                 m(filterButton),
+                m(refreshButton),
                 m(wifiDevices),
 
             ],

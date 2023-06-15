@@ -25,8 +25,8 @@ function createMainWindow() {
     const window = new BrowserWindow({
         webPreferences: { nodeIntegration: true, contextIsolation: false },
         title: "zebra",
-        width: 320,
-        height: 480,
+        width: 640,
+        height: 640,
         fullscreenable: false,
         minimizable: false,
         resizable: false,
@@ -126,9 +126,10 @@ app.on("ready", () => {
 // When the renderer is ready execute the updateRenderer.
 ipcMain.on("renderer.ready", () => updateRenderer());
 
-ipcMain.on("device.set", async (event: Electron.IpcMainEvent, index: number, type: string) => {
+ipcMain.on("device.set", async (event: Electron.IpcMainEvent, index: number, type: string, uniqueIdentifier: string) => {
+    console.log("device.set", index, type, uniqueIdentifier);
     try {
-        await manager.defaultDevice(index, type);
+        await manager.defaultDevice(index, uniqueIdentifier, type);
     } catch (error) {
         console.error(error)
     }
@@ -157,9 +158,10 @@ async function updateRenderer() {
         list: usbDevices,
     } as IData);
     const wifiDevices = await manager.wifiDeviceList;
-    const wifiIndex = manager.findDefaultWifiDeviceIndex(wifiDevices);
+    const wifiDevice = manager.findDefaultWifiDevice(wifiDevices);
+    console.log(`selected wifi device: ${wifiDevice?.mac || 'Unknown'} ${wifiDevice?.name || 'Unknown'}`)
     mainWindow.webContents.send("wifidevices.list", {
-        selected: wifiIndex,
+        selected: wifiDevice?.mac || null,
         list: wifiDevices,
     } as WifiData);
 }
