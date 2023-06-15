@@ -237,6 +237,14 @@ export class Manager extends EventEmitter {
             const wifiDevices = await this.wifiDeviceList;
             return wifiDevices[index];
     }
+        /**
+     * Get the device.
+     * @param mac Device index in the attached devices.
+     */
+    private async getWifiMacAddress(mac: string): Promise<WifiDevice> {
+            const wifiDevices = await this.wifiDeviceList;
+            return wifiDevices.find((device) => device.mac === mac);
+    }
     private async getWifiEndpoint(index?: number): Promise<string> {
         if (index !== undefined) {
             return await this.getWifiDevice(index).then((device) => device.ip)
