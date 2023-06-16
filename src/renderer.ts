@@ -128,10 +128,17 @@ const wifiDevices = {
                             messageParagraph.text = `Setting ${device.name} as default printer`;
                             ipcRenderer.send('device.set', index, 'wifi', device.mac);
                         },
+                        innerHTML: `
+<strong>${device.name}</strong><br>
+<div class="flex-container justify-items">
+    <div class="flex-item">
+    IP: ${device.ip}
+    </div>
+    <div class="flex-item">
+    MAC: ${device.mac}
+    </div>
+</div>`,
                     },
-                    `Name: ${device.name}
-                    IP: ${device.ip}
-                    MAC: ${device.mac}`
                 );
             })
         );

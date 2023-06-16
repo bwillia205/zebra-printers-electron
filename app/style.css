@@ -245,3 +245,16 @@ button:disabled {
     color: #666;
     cursor: not-allowed;
 }
+
+
+.flex-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.flex-item {
+    flex: 1;
+    ont-size: smaller;
+    margin-top: 0.5em;
+    color: #7f7f7f;
+}
