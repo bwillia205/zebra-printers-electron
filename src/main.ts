@@ -1,10 +1,10 @@
 #!/bin/node
-import { app, BrowserWindow, ipcMain, Menu, Tray } from "electron";
+import {app, BrowserWindow, ipcMain, Menu, Tray} from "electron";
 import * as log from "electron-log";
-import { autoUpdater } from "electron-updater";
+import {autoUpdater} from "electron-updater";
 import * as path from "path";
-import { IData, INotification, WifiData } from "./renderer";
-import { Device, Manager, Server } from "./zebra";
+import {IData, INotification, WifiData} from "./renderer";
+import {Device, Manager, Server, WifiDevice} from "./zebra";
 
 autoUpdater.logger = log;
 log.info("App starting...");
@@ -23,16 +23,16 @@ let mainTray: Tray;
 
 function createMainWindow() {
     const window = new BrowserWindow({
-        webPreferences: { nodeIntegration: true, contextIsolation: false },
-        title: "zebra",
-        width: 320,
-        height: 480,
+        webPreferences: {nodeIntegration: true, contextIsolation: false},
+        title: "Octopus Operations PrintStation",
+        width: 640,
+        height: 640,
         fullscreenable: false,
-        minimizable: false,
+        minimizable: true,
         resizable: false,
         autoHideMenuBar: true,
         alwaysOnTop: true,
-        icon: path.join(__dirname, "../assets/icon/app16x16.png"),
+        icon: path.join(__dirname, "../assets/icon/app.png"),
         // closable: false,
         // transparent: true,
         // frame: false,
@@ -41,7 +41,7 @@ function createMainWindow() {
     window.loadFile(path.join(__dirname, "../app.html"));
 
     if (showConsole) {
-        window.webContents.openDevTools({ mode: "detach" });
+        window.webContents.openDevTools({mode: "detach"});
     }
     window.on("close", (event) => {
         // Prevent the closing app directly, minimize to tray instead.
@@ -74,14 +74,14 @@ function buildMainTray(updateAvailable: boolean = false) {
     );
 
     const contextMenuItems: Electron.MenuItemConstructorOptions[] = [
-        { enabled: false, label: `v${app.getVersion()}` },
+        {enabled: false, label: `v${app.getVersion()}`},
         {
             label: "Check for Updates",
             click: () => {
                 autoUpdater.checkForUpdatesAndNotify();
             },
         },
-        { type: "separator" },
+        {type: "separator"},
         {
             label: "Exit",
             click: () => {
@@ -126,61 +126,71 @@ app.on("ready", () => {
 // When the renderer is ready execute the updateRenderer.
 ipcMain.on("renderer.ready", () => updateRenderer());
 
-ipcMain.on("device.set", async (event: Electron.IpcMainEvent, index: number, type: string) => {
+ipcMain.on("device.set", async (event: Electron.IpcMainEvent, index: number, type: string, uniqueIdentifier: string) => {
+    console.log("device.set", index, type, uniqueIdentifier);
+    mainWindow.webContents.send("blockSelection")
     try {
-        await manager.defaultDevice(index, type);
+        manager.defaultDevice(index, uniqueIdentifier, type)
+            .then(() => {
+                mainWindow.webContents.send("unblockSelection");
+            });
     } catch (error) {
         console.error(error)
+        mainWindow.webContents.send("unblockSelection");
     }
 
 
 });
 
-// Inform the renderer on any change on the manager.
-manager.on("change", () => {
-    updateRenderer()
+ipcMain.on('wifidevices.refresh', () => {
+    updateRenderer();
 });
 
-manager.on("change:remove", (device: Device) => {
-    // sendNotification({
-    //     class: "yellow",
-    //     content: `${device.deviceName} removed from the system.`,
-    //     duration: 1500,
-    // });
+// Inform the renderer on any change on the manager.
+manager.on("change", () => {
+    updateRenderer();
 });
 
 manager.on("change:add", (device: Device) => {
     updateRenderer();
-    // sendNotification({
-    //     class: "blue",
-    //     content: `${device.deviceName} attached to the system.`,
-    //     duration: 1500,
-    // });
 });
 
 manager.on("change:default", (device: any) => {
-    updateRenderer();
-    // sendNotification({
-    //     class: "green",
-    //     content: `${device.deviceName} selected as default request handler.`,
-    //     duration: 1500,
-    // });
+    mainWindow.webContents.send("blockSelection");
+    let wifiDevices: WifiDevice[] = [];
+    manager.wifiDeviceList.then((list) => {
+        wifiDevices = list;
+
+        const wifiDevice = manager.findDefaultWifiDevice(wifiDevices);
+        if (wifiDevice) {
+            mainWindow.webContents.send("wifidevices.list", {
+                selected: wifiDevice?.mac || null,
+                list: wifiDevices,
+            } as WifiData);
+            mainWindow.webContents.send("unblockSelection");
+        }
+    });
 });
 
-function updateRenderer() {
-    manager.deviceList.then((devices) => {
-        const index = manager.findDefaultUSBDeviceIndex(devices);
-        mainWindow.webContents.send("device.list", {
-            selected: index,
-            list: devices,
-        } as IData);
-    });
-    manager.wifiDeviceList.then((devices) => {
-        const index = manager.findDefaultWifiDeviceIndex(devices);
+async function updateRenderer() {
+    // const usbDevices = await manager.deviceList;
+    // const index = manager.findDefaultUSBDeviceIndex(usbDevices);
+    // mainWindow.webContents.send("device.list", {
+    //     selected: index,
+    //     list: usbDevices,
+    // } as IData);
+
+    let wifiDevices: WifiDevice[] = [];
+    manager.wifiDeviceList.then((list) => {
+        wifiDevices = list;
+
+        const wifiDevice = manager.findDefaultWifiDevice(wifiDevices);
         mainWindow.webContents.send("wifidevices.list", {
-            selected: index,
-            list: devices,
+            selected: wifiDevice?.mac || null,
+            list: wifiDevices,
         } as WifiData);
+        mainWindow.webContents.send("allowActions");
+        mainWindow.webContents.send("unblockSelection");
     });
 }
 

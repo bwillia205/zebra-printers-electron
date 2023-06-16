@@ -56,7 +56,17 @@ ul.wifidevices {
     margin: 8px;
     border: 1px solid #dcdcdc;
     border-radius: 4px;
+    overflow: scroll;
+    max-height: 60vh;
+}
+
+ul.wifidevices.readonly {
+    background-color: #f0f4c3;
+    color: #33691e;
+    border: 1px solid #dcdcdc;
+    border-radius: 4px;
     overflow: hidden;
+    pointer-events: none;
 }
 
 ul.wifidevices > li.wifidevice {
@@ -79,6 +89,24 @@ ul.wifidevices > li.wifidevice.selected::before {
     content: "✔️";
     line-height: 0;
     margin-right: 8px;
+}
+
+div.note {
+    padding: 0.25em 0.5em;
+    margin: 1em 0;
+    text-align: center;
+}
+
+small {
+    font-size: 12px;
+    color: #666;
+    font-weight: bold;
+}
+
+p.message {
+    margin: 1em auto;
+    padding: 1em 0.5em;
+    font-size: 14px;
 }
 
 div.info {
@@ -153,4 +181,80 @@ div.notifications > div.notification.red {
 }
 div.notification.red::before {
     content: "ERROR";
+}
+
+.spinner {
+    display: block;
+    position: relative;
+    width: 48px;
+    height: 48px;
+}
+.spinner div {
+    box-sizing: border-box;
+    display: block;
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    margin: 8px;
+    border: 8px solid #666;
+    border-radius: 50%;
+    animation: spinner 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    border-color: #666 transparent transparent transparent;
+}
+.spinner div:nth-child(1) {
+    animation-delay: -0.45s;
+}
+.spinner div:nth-child(2) {
+    animation-delay: -0.3s;
+}
+.spinner div:nth-child(3) {
+    animation-delay: -0.15s;
+}
+@keyframes spinner {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.button-container {
+    text-align: center;
+    margin: 1em 0;
+    padding: 1em;
+}
+
+button {
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    background-color: #007bff;
+    color: #fff;
+    margin: 4px 8px;
+}
+
+button:hover {
+    background-color: #0069d9;
+}
+
+button:disabled {
+    background-color: #dcdcdc;
+    color: #666;
+    cursor: not-allowed;
+}
+
+
+.flex-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.flex-item {
+    flex: 1;
+    ont-size: smaller;
+    margin-top: 0.5em;
+    color: #7f7f7f;
 }
