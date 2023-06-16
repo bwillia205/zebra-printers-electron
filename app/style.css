@@ -56,7 +56,8 @@ ul.wifidevices {
     margin: 8px;
     border: 1px solid #dcdcdc;
     border-radius: 4px;
-    overflow: hidden;
+    overflow: scroll;
+    max-height: 60vh;
 }
 
 ul.wifidevices.readonly {
@@ -90,16 +91,21 @@ ul.wifidevices > li.wifidevice.selected::before {
     margin-right: 8px;
 }
 
-small.note {
+div.note {
+    padding: 0.25em 0.5em;
+    margin: 1em 0;
+    text-align: center;
+}
+
+small {
     font-size: 12px;
     color: #666;
-    padding: 0.25em 0.5em;
-    margin: 0.25em 0;
+    font-weight: bold;
 }
 
 p.message {
     margin: 1em auto;
-    padding: 0.5em;
+    padding: 1em 0.5em;
     font-size: 14px;
 }
 
@@ -213,6 +219,12 @@ div.notification.red::before {
     }
 }
 
+.button-container {
+    text-align: center;
+    margin: 1em 0;
+    padding: 1em;
+}
+
 button {
     font-size: 14px;
     padding: 8px 12px;
@@ -222,4 +234,14 @@ button {
     background-color: #007bff;
     color: #fff;
     margin: 4px 8px;
+}
+
+button:hover {
+    background-color: #0069d9;
+}
+
+button:disabled {
+    background-color: #dcdcdc;
+    color: #666;
+    cursor: not-allowed;
 }

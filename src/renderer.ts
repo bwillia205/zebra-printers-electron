@@ -1,15 +1,17 @@
-import { ipcRenderer } from 'electron';
+import {ipcRenderer} from 'electron';
 import * as m from 'mithril';
-import { Device, WifiDevice } from './zebra';
+import {Device, WifiDevice} from './zebra';
 
 export interface IData {
     selected: number;
     list: Device[];
 }
+
 export interface WifiData {
     selected: string;
     list: WifiDevice[];
 }
+
 // App's root element.
 const root = document.getElementById('app');
 
@@ -24,6 +26,7 @@ ipcRenderer.on(
         m.redraw();
     }
 );
+
 ipcRenderer.on(
     'wifidevices.list',
     (event: Electron.IpcRendererEvent, data: WifiData) => {
@@ -40,6 +43,29 @@ ipcRenderer.on(
     (event: Electron.IpcRendererEvent, data: INotification) => {
         notifications.list.push(data);
         m.redraw();
+    }
+);
+
+ipcRenderer.on(
+    'allowActions',
+    (event: Electron.IpcRendererEvent) => {
+        refreshButton.disabled = false;
+        showAllButton.disabled = false;
+        filterButton.disabled = false;
+    }
+);
+
+ipcRenderer.on(
+    'blockSelection',
+    (event: Electron.IpcRendererEvent) => {
+        wifiDevices.selectionBlocked = true;
+    }
+);
+
+ipcRenderer.on(
+    'unblockSelection',
+    (event: Electron.IpcRendererEvent) => {
+        wifiDevices.selectionBlocked = false;
     }
 );
 
@@ -74,13 +100,14 @@ const wifiDevices = {
         selected: null,
         list: [],
     } as WifiData,
+    selectionBlocked: false,
     view: () => {
         let filteredData = wifiDevices.data.list;
-        if(!wifiDevices.showAll){
+        if (!wifiDevices.showAll) {
             const filters = Array.from(new Set(['zebra', 'printer']));
 
             // Check if the elements in filters are substring of the name
-            filteredData = wifiDevices.data.list.filter(({ name }) => filters.some((filter) => name.includes(filter)));
+            filteredData = wifiDevices.data.list.filter(({name}) => filters.some((filter) => name.includes(filter)));
 
         }
         return m(
@@ -93,6 +120,11 @@ const wifiDevices = {
                         class:
                             device.mac === wifiDevices.data.selected ? 'selected' : '',
                         onclick: () => {
+                            if (wifiDevices.selectionBlocked) {
+                                messageParagraph.text = `${messageParagraph.text ? messageParagraph.text + '<br><br>' : ''}Please wait until the current operation is finished`;
+                                return;
+                            }
+                            spinner.show = true;
                             messageParagraph.text = `Setting ${device.name} as default printer`;
                             ipcRenderer.send('device.set', index, 'wifi', device.mac);
                         },
@@ -161,17 +193,19 @@ const notifications = {
 const spinner = {
     show: true,
     view: (): m.Vnode<any, any> => {
-        if(spinner.show){
+        if (spinner.show) {
             return m('div.spinner', [m('div')])
         }
         return m('div');
     },
 }
 const showAllButton = {
+    disabled: true,
     view: (vn: m.Vnode) => {
         return m(
             'button#showAll',
             {
+                disabled: showAllButton.disabled,
                 onclick: () => {
                     wifiDevices.showAll = true;
                     m.redraw();
@@ -182,10 +216,12 @@ const showAllButton = {
     },
 }
 const filterButton = {
+    disabled: true,
     view: (vn: m.Vnode) => {
         return m(
             'button#filter',
             {
+                disabled: filterButton.disabled,
                 onclick: () => {
                     wifiDevices.showAll = false;
                     m.redraw();
@@ -196,15 +232,20 @@ const filterButton = {
     },
 }
 const refreshButton = {
+    disabled: true,
     view: (vn: m.Vnode) => {
         return m(
             'button#refresh',
             {
+                disabled: refreshButton.disabled,
                 onclick: () => {
+                    refreshButton.disabled = true;
+                    showAllButton.disabled = true;
+                    filterButton.disabled = true;
                     wifiDevices.data.selected = null;
                     wifiDevices.data.list = [];
                     spinner.show = true;
-                    ipcRenderer.send('wifidevices.list');
+                    ipcRenderer.send('wifidevices.refresh');
                 },
             },
             'Refresh'
@@ -216,7 +257,10 @@ const refreshButton = {
 const messageParagraph = {
     text: '',
     view: (vn: m.Vnode) => {
-        return m('p.message', messageParagraph.text);
+        return m('p.message',
+            {
+                innerHTML: messageParagraph.text,
+            });
     }
 }
 
@@ -224,31 +268,32 @@ const body = {
     view: () => {
         return m('div.body', [
             m(notifications),
-            [
-
+            m(
+                'div.note',
                 m(
-                    'small.note',
+                    'small',
                     'Note: If you are using a Zebra printer, you will need to connect to the VPN before it will appear in the list.'
-                ),
+                )
+            ),
+            m(
+                'div.button-container',
+                [
+                    m(showAllButton),
+                    m(filterButton),
+                    m(refreshButton),
+                ],
+            ),
+            [
                 m(messageParagraph),
+            ],
+            [
                 m(
                     'div.info',
                     'Select a default WiFi device to handle requests.'
                 ),
                 m(spinner),
-                m(showAllButton),
-                m(filterButton),
-                m(refreshButton),
                 m(wifiDevices),
 
-            ],
-            [
-
-                m(
-                    'div.info',
-                    'Select a default USB device to handle requests.'
-                ),
-                m(devices),
             ],
         ]);
     },

@@ -33,35 +33,36 @@ export class Manager extends EventEmitter {
         super();
 
         // Start monitoring device list for upcoming changes such as attaching/removing.
-        usbDetection.startMonitoring();
+        // usbDetection.startMonitoring();
 
         // Mirror any changes on usbDetection to Manager.
-        usbDetection.on("change", (device) => this.emit("change", device));
+        // usbDetection.on("change", (device) => this.emit("change", device));
 
-        usbDetection.on("add", (device) => this.emit("change:add", device));
+        // usbDetection.on("add", (device) => this.emit("change:add", device));
 
         // On device remove, check if the removed device is default device. If so set it undefined.
-        usbDetection.on("remove", (device) => {
-            if (
-                this._usbDefault &&
-                this._usbDefault.device.deviceAddress === device.deviceAddress
-            ) {
-                this._usbDefault = undefined;
-                storage.remove("default-usb-printer", (_) => null); // omit the error.
-            }
-            this.emit("change:remove", device);
-        });
+        // usbDetection.on("remove", (device) => {
+        //     if (
+        //         this._usbDefault &&
+        //         this._usbDefault.device.deviceAddress === device.deviceAddress
+        //     ) {
+        //         this._usbDefault = undefined;
+        //         storage.remove("default-usb-printer", (_) => null); // omit the error.
+        //     }
+        //     this.emit("change:remove", device);
+        // });
 
         storage.get("default-wifi-printer", (_, data: { id: number, type: 'wifi', uniqueIdentifier: string }) => {
             this.defaultDevice(data.id, data.uniqueIdentifier, data.type).catch((error) => {
                 console.log(error);
             }); // omit the error.
         });
-        storage.get("default-usb-printer", (_, data: { id: number, type: 'usb', uniqueIdentifier: string }) => {
-            this.defaultDevice(data.id, data.uniqueIdentifier, data.type).catch((error) => {
-                console.log(error);
-            }); // omit the error.
-        });
+
+        // storage.get("default-usb-printer", (_, data: { id: number, type: 'usb', uniqueIdentifier: string }) => {
+        //     this.defaultDevice(data.id, data.uniqueIdentifier, data.type).catch((error) => {
+        //         console.log(error);
+        //     }); // omit the error.
+        // });
     }
 
     /**

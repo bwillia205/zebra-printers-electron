@@ -1,10 +1,10 @@
 #!/bin/node
-import { app, BrowserWindow, ipcMain, Menu, Tray } from "electron";
+import {app, BrowserWindow, ipcMain, Menu, Tray} from "electron";
 import * as log from "electron-log";
-import { autoUpdater } from "electron-updater";
+import {autoUpdater} from "electron-updater";
 import * as path from "path";
-import { IData, INotification, WifiData } from "./renderer";
-import { Device, Manager, Server } from "./zebra";
+import {IData, INotification, WifiData} from "./renderer";
+import {Device, Manager, Server, WifiDevice} from "./zebra";
 
 autoUpdater.logger = log;
 log.info("App starting...");
@@ -23,8 +23,8 @@ let mainTray: Tray;
 
 function createMainWindow() {
     const window = new BrowserWindow({
-        webPreferences: { nodeIntegration: true, contextIsolation: false },
-        title: "zebra",
+        webPreferences: {nodeIntegration: true, contextIsolation: false},
+        title: "Octopus Operations PrintStation",
         width: 640,
         height: 640,
         fullscreenable: false,
@@ -41,7 +41,7 @@ function createMainWindow() {
     window.loadFile(path.join(__dirname, "../app.html"));
 
     if (showConsole) {
-        window.webContents.openDevTools({ mode: "detach" });
+        window.webContents.openDevTools({mode: "detach"});
     }
     window.on("close", (event) => {
         // Prevent the closing app directly, minimize to tray instead.
@@ -74,14 +74,14 @@ function buildMainTray(updateAvailable: boolean = false) {
     );
 
     const contextMenuItems: Electron.MenuItemConstructorOptions[] = [
-        { enabled: false, label: `v${app.getVersion()}` },
+        {enabled: false, label: `v${app.getVersion()}`},
         {
             label: "Check for Updates",
             click: () => {
                 autoUpdater.checkForUpdatesAndNotify();
             },
         },
-        { type: "separator" },
+        {type: "separator"},
         {
             label: "Exit",
             click: () => {
@@ -128,18 +128,27 @@ ipcMain.on("renderer.ready", () => updateRenderer());
 
 ipcMain.on("device.set", async (event: Electron.IpcMainEvent, index: number, type: string, uniqueIdentifier: string) => {
     console.log("device.set", index, type, uniqueIdentifier);
+    mainWindow.webContents.send("blockSelection")
     try {
-        await manager.defaultDevice(index, uniqueIdentifier, type);
+        manager.defaultDevice(index, uniqueIdentifier, type)
+            .then(() => {
+                mainWindow.webContents.send("unblockSelection");
+            });
     } catch (error) {
         console.error(error)
+        mainWindow.webContents.send("unblockSelection");
     }
 
 
 });
 
+ipcMain.on('wifidevices.refresh', () => {
+    updateRenderer();
+});
+
 // Inform the renderer on any change on the manager.
 manager.on("change", () => {
-    updateRenderer()
+    updateRenderer();
 });
 
 manager.on("change:add", (device: Device) => {
@@ -147,23 +156,42 @@ manager.on("change:add", (device: Device) => {
 });
 
 manager.on("change:default", (device: any) => {
-    updateRenderer();
+    mainWindow.webContents.send("blockSelection");
+    let wifiDevices: WifiDevice[] = [];
+    manager.wifiDeviceList.then((list) => {
+        wifiDevices = list;
+
+        const wifiDevice = manager.findDefaultWifiDevice(wifiDevices);
+        if (wifiDevice) {
+            mainWindow.webContents.send("wifidevices.list", {
+                selected: wifiDevice?.mac || null,
+                list: wifiDevices,
+            } as WifiData);
+            mainWindow.webContents.send("unblockSelection");
+        }
+    });
 });
 
 async function updateRenderer() {
-    const usbDevices = await manager.deviceList;
-    const index = manager.findDefaultUSBDeviceIndex(usbDevices);
-    mainWindow.webContents.send("device.list", {
-        selected: index,
-        list: usbDevices,
-    } as IData);
-    const wifiDevices = await manager.wifiDeviceList;
-    const wifiDevice = manager.findDefaultWifiDevice(wifiDevices);
-    console.log(`selected wifi device: ${wifiDevice?.mac || 'Unknown'} ${wifiDevice?.name || 'Unknown'}`)
-    mainWindow.webContents.send("wifidevices.list", {
-        selected: wifiDevice?.mac || null,
-        list: wifiDevices,
-    } as WifiData);
+    // const usbDevices = await manager.deviceList;
+    // const index = manager.findDefaultUSBDeviceIndex(usbDevices);
+    // mainWindow.webContents.send("device.list", {
+    //     selected: index,
+    //     list: usbDevices,
+    // } as IData);
+
+    let wifiDevices: WifiDevice[] = [];
+    manager.wifiDeviceList.then((list) => {
+        wifiDevices = list;
+
+        const wifiDevice = manager.findDefaultWifiDevice(wifiDevices);
+        mainWindow.webContents.send("wifidevices.list", {
+            selected: wifiDevice?.mac || null,
+            list: wifiDevices,
+        } as WifiData);
+        mainWindow.webContents.send("allowActions");
+        mainWindow.webContents.send("unblockSelection");
+    });
 }
 
 autoUpdater.on("checking-for-update", () => {

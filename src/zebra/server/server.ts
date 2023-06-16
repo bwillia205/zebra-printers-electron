@@ -61,17 +61,17 @@ export class Server {
      */
     private register(): void {
         // Handle the GET request.
-        this.express.get("/", (_, response) => {
-            this.manager.deviceList
-                .then((devices) => {
-                    const index = this.manager.findDefaultUSBDeviceIndex(devices);
-                    response.json({
-                        selected: index,
-                        devices,
-                    });
-                })
-                .catch((error) => response.status(500).send(error.toString()));
-        });
+        // this.express.get("/", (_, response) => {
+        //     this.manager.deviceList
+        //         .then((devices) => {
+        //             const index = this.manager.findDefaultUSBDeviceIndex(devices);
+        //             response.json({
+        //                 selected: index,
+        //                 devices,
+        //             });
+        //         })
+        //         .catch((error) => response.status(500).send(error.toString()));
+        // });
 
         // Handle the POST request.
         this.express.post("/", (request, response) => {
