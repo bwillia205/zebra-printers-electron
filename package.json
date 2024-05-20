@@ -1,7 +1,7 @@
 {
-  "name": "zebra-printers-electron",
+  "name": "label-printing-electron-app",
   "version": "1.0.0",
-  "description": "App to connect to Zebra thermal printers",
+  "description": "App to discover and print to Zebra thermal printers",
   "main": "./app/src/main.js",
   "scripts": {
     "dev": "tsc && SHOW_CONSOLE=true electron ./app/src/main.js",
